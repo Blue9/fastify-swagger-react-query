@@ -5,6 +5,27 @@ import pino from 'pino'
 import { Static, TProperties, Type } from '@sinclair/typebox'
 import { TObject } from '@sinclair/typebox'
 
+export const server = <T extends Schemas, S extends ServerSpec<T>>(schemas: T, spec: S, impl: ServerImpl<T, S>) => {
+  const app = getBaseServer()
+  app.register((app) => registerRoutes(app, schemas, spec, impl))
+  return app
+}
+
+export const moduleSpecBuilder =
+  <T extends Schemas>(schemas: T) =>
+  <M extends ModuleSpec<T>>(spec: M) => {
+    return spec
+  }
+
+export const routeImplBuilder =
+  <T extends Schemas, M extends ModuleSpec<T>>(schemas: T, spec: M) =>
+  <RouteName extends keyof M['routes'], I extends RouteHandlerImpl<T, M['routes'][RouteName]>>(
+    routeName: RouteName,
+    impl: I
+  ) => {
+    return impl
+  }
+
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 type Schemas = {
@@ -19,26 +40,26 @@ type RouteSpec<T extends Schemas> = {
   response?: Extract<keyof T, string> | undefined
 }
 
-export type ModuleSpec<T extends Schemas> = {
+type ModuleSpec<T extends Schemas> = {
   path: string
   routes: {
     [route: string]: RouteSpec<T>
   }
 }
 
-export type ServerSpec<T extends Schemas> = {
+type ServerSpec<T extends Schemas> = {
   [module: string]: ModuleSpec<T>
 }
 
-export type RouteHandlerImpl<T extends Schemas, R extends RouteSpec<T>> = (
+type RouteHandlerImpl<T extends Schemas, R extends RouteSpec<T>> = (
   args: ExtractArgs<T, R>
 ) => Promise<Static<TObject<T[NonNullable<R['response']>]>>>
 
-export type ModuleImpl<T extends Schemas, M extends ModuleSpec<T>> = {
+type ModuleImpl<T extends Schemas, M extends ModuleSpec<T>> = {
   [Route in keyof M['routes']]: RouteHandlerImpl<T, M['routes'][Route]>
 }
 
-export type ServerImpl<T extends Schemas, S extends ServerSpec<T>> = {
+type ServerImpl<T extends Schemas, S extends ServerSpec<T>> = {
   [Module in keyof S]: ModuleImpl<T, S[Module]>
 }
 
@@ -141,32 +162,5 @@ const registerRoutes = <T extends Schemas, S extends ServerSpec<T>, I extends Se
       })
     }
   }
-  return app
-}
-
-export function moduleSpec<T extends Schemas, M extends ModuleSpec<T>>(schemas: T, spec: M): M {
-  return spec
-}
-
-export function routeImpl<
-  T extends Schemas,
-  M extends ModuleSpec<T>,
-  RouteName extends keyof M['routes'],
-  I extends RouteHandlerImpl<T, M['routes'][RouteName]>
->(schemas: T, spec: M, routeName: RouteName, impl: I): RouteHandlerImpl<T, M['routes'][RouteName]> {
-  return impl
-}
-
-export function moduleImpl<T extends Schemas, M extends ModuleSpec<T>, I extends ModuleImpl<T, M>>(
-  schemas: T,
-  spec: M,
-  impl: I
-) {
-  return impl
-}
-
-export const server = <T extends Schemas, S extends ServerSpec<T>>(schemas: T, spec: S, impl: ServerImpl<T, S>) => {
-  const app = getBaseServer()
-  app.register((app) => registerRoutes(app, schemas, spec, impl))
   return app
 }
