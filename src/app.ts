@@ -1,5 +1,5 @@
 import { Type } from '@sinclair/typebox'
-import { moduleSpecBuilder, routeImplBuilder, server } from './server'
+import { moduleSpecBuilder, routerBuilder, server } from './server'
 
 // 1. Define your schemas using TypeBox
 const schemas = {
@@ -7,7 +7,7 @@ const schemas = {
   HelloResponse: { hello: Type.String() },
 }
 
-// 2. Define your modules. moduleSpecBuilder() brings nice type-checking.
+// 2. Define your modules. moduleSpecBuilder() is optional but it brings in-line type-checking.
 const moduleSpec = moduleSpecBuilder(schemas)
 
 const helloModuleSpec = moduleSpec({
@@ -22,10 +22,10 @@ const helloModuleSpec = moduleSpec({
 })
 
 // 3. Implement your routes.
-// routeImplBuilder() brings type-checking and type-inference so you don't have to explicitly type your function params.
-const helloRoute = routeImplBuilder(schemas, helloModuleSpec)
+// routerBuilder() is optional but it brings type-checking and type-inference so you don't have to explicitly type your function params.
+const helloRouter = routerBuilder(schemas, helloModuleSpec)
 
-const getHelloWorld = helloRoute(`getHelloWorld`, async ({ query, instance }) => {
+const getHelloWorld = helloRouter(`getHelloWorld`, async ({ query, instance }) => {
   // instance is the server instance. Useful if you set fields through plugins.
   console.log(instance.version)
   return { hello: (query.recipient ?? 'World') + '!' }
@@ -41,7 +41,7 @@ const serverSpec = { hello: helloModuleSpec }
 const serverImpl = { hello: helloModuleImpl }
 export const app = server(schemas, serverSpec, serverImpl)
 
-// Appendix: Everything in one step (useful for simple servers):
+// Appendix: Everything in one step (good for simple servers):
 const app2 = server(
   {
     HelloRequest: { recipient: Type.Optional(Type.String()) },

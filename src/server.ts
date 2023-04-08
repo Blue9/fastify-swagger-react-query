@@ -17,7 +17,7 @@ export const moduleSpecBuilder =
     return spec
   }
 
-export const routeImplBuilder =
+export const routerBuilder =
   <T extends Schemas, M extends ModuleSpec<T>>(schemas: T, spec: M) =>
   <RouteName extends keyof M['routes'], I extends RouteHandlerImpl<T, M['routes'][RouteName]>>(
     routeName: RouteName,
