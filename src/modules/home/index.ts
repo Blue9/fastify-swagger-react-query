@@ -1,1 +1,0 @@
-export {homeModule} from "./router";
