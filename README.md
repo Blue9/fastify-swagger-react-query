@@ -2,6 +2,8 @@ Barebones Fastify server with auto-generated docs (Swagger) and client (React Qu
 
 # Backend
 
+Basic example server is in `src/app.ts`.
+
 Set up using `npm install`.
 
 Run the server using `npm run dev`. Go to `localhost:4000/docs` to view the docs.
