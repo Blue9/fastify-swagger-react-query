@@ -1,9 +1,10 @@
-import fastify, { FastifyInstance, FastifyReply } from 'fastify'
+import fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import swagger, { SwaggerOptions } from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
 import pino from 'pino'
 import { Static, TProperties, Type } from '@sinclair/typebox'
 import { TObject } from '@sinclair/typebox'
+import { authPlugin } from './auth'
 
 export const server = <T extends Schemas, S extends ServerSpec<T>>(schemas: T, spec: S, impl: ServerImpl<T, S>) => {
   const app = getBaseServer()
@@ -34,6 +35,7 @@ type Schemas = {
 
 type RouteSpec<T extends Schemas> = {
   url: `${Method} /${string}`
+  auth?: boolean | undefined
   body?: Extract<keyof T, string> | undefined
   params?: Extract<keyof T, string> | undefined
   query?: Extract<keyof T, string> | undefined
@@ -65,7 +67,7 @@ type ServerImpl<T extends Schemas, S extends ServerSpec<T>> = {
 
 type ExtractArgs<T extends Schemas, R extends RouteSpec<T>> = {
   [K in keyof R]: K extends 'query' | 'params' | 'body' ? Static<TObject<T[NonNullable<R[K]>]>> : never
-} & { instance: FastifyInstance }
+} & { instance: FastifyInstance; request: FastifyRequest }
 
 const getBaseServer = () => {
   const app = fastify({
@@ -82,6 +84,7 @@ const getBaseServer = () => {
     }),
     disableRequestLogging: true,
   })
+  app.register(authPlugin)
 
   // Swagger
   const swaggerOptions: SwaggerOptions = {
@@ -139,6 +142,7 @@ const registerRoutes = <T extends Schemas, S extends ServerSpec<T>, I extends Se
       app.route({
         method,
         url: `${modulePath}${path.replace(/\/$/, '')}`,
+        preHandler: routeSpec.auth ? app.authenticate : undefined,
         schema: {
           querystring: routeSpec.query && Type.Ref(Type.Any({ $id: routeSpec.query })),
           params: routeSpec.params && Type.Ref(Type.Any({ $id: routeSpec.params })),
@@ -155,6 +159,7 @@ const registerRoutes = <T extends Schemas, S extends ServerSpec<T>, I extends Se
             params: request.params,
             body: request.body,
             instance: app,
+            request: request,
           } as Parameters<typeof routeHandler>[0]
           const result = await routeHandler(args)
           reply.send(result)
