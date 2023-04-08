@@ -7,10 +7,7 @@ const OPENAPI_PATH = './openapi.tmp.json'
 async function generateClient() {
   await app.ready()
   const openapiSpec = app.swagger()
-  await fs.promises.writeFile(
-    OPENAPI_PATH,
-    JSON.stringify(openapiSpec, null, 2)
-  )
+  await fs.promises.writeFile(OPENAPI_PATH, JSON.stringify(openapiSpec, null, 2))
   await orval({
     input: OPENAPI_PATH,
     output: {
