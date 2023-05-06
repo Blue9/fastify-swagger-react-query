@@ -1,4 +1,4 @@
-Barebones Fastify server with auto-generated docs (Swagger) and client (React Query). Very clean.
+Barebones Fastify server with auto-generated docs (Swagger) and client (React Query).
 
 # Backend
 
