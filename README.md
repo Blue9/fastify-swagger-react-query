@@ -16,6 +16,37 @@ A server is a collection of modules, which are collections of endpoints. Every e
 Below is the example server that's run when you run `npm run dev` (copy of `src/app.ts`).
 
 ```ts
+export const app = server(
+  { // 1. Schemas.
+    HelloRequest: Schema('HelloRequest', { recipient: Type.Optional(Type.String()) }),
+    HelloResponse: Schema('HelloResponse', { hello: Type.String() }),
+  },
+  { // 2. Module specs.
+    hello: {
+      path: `/hello`,
+      routes: {
+        getHelloWorld: {
+          auth: false,
+          path: `GET /`,
+          query: `HelloRequest`, // <-- Fully typed, must be a key in `schemas`
+          response: `HelloResponse`,
+        },
+      },
+    },
+  },
+  { // 3. Module implementations.
+    hello: {
+      getHelloWorld: async ({ query }) => {
+        return { hello: query.recipient ?? 'World' }
+      },
+    },
+  }
+)
+```
+
+You can also break things up as your server grows in complexity. The `moduleSpec` and `moduleImpl` helper functions can assist with type-checking.
+
+```ts
 import { Type } from '@sinclair/typebox'
 import { moduleSpec, moduleImpl, server, Schema } from './server'
 
@@ -62,37 +93,6 @@ const helloModuleImpl = moduleImpl(schemas, helloModuleSpec, {
 const serverSpec = { hello: helloModuleSpec }
 const serverImpl = { hello: helloModuleImpl }
 export const app = server(schemas, serverSpec, serverImpl)
-```
-
-You can also implement everything in one step if your server is simple. Simply call `server(schemas, spec, impl)`:
-
-```ts
-export const app = server(
-  {
-    HelloRequest: Schema('HelloRequest', { recipient: Type.Optional(Type.String()) }),
-    HelloResponse: Schema('HelloResponse', { hello: Type.String() }),
-  },
-  {
-    hello: {
-      path: `/hello`,
-      routes: {
-        getHelloWorld: {
-          auth: false,
-          path: `GET /`,
-          query: `HelloRequest`, // <-- Fully typed, must be a key in `schemas`
-          response: `HelloResponse`,
-        },
-      },
-    },
-  },
-  {
-    hello: {
-      getHelloWorld: async ({ query }) => {
-        return { hello: query.recipient ?? 'World' }
-      },
-    },
-  }
-)
 ```
 
 ## Why
