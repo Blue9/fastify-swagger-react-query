@@ -163,7 +163,7 @@ const registerRoutes = <T extends Schemas, S extends ServerSpec<T>, I extends Se
       app.route({
         method,
         url: `${basePath}${path.replace(/\/$/, '')}`,
-        preHandler: routeSpec.auth !== false ? authenticate : undefined,
+        preParsing: routeSpec.auth !== false ? authenticate : undefined,
         schema: {
           ...(routeSpec.query && { querystring: { $ref: routeSpec.query } }),
           ...(routeSpec.params && { params: { $ref: routeSpec.params } }),
